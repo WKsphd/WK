@@ -1,0 +1,82 @@
+---
+title: "WK_SLEDZ"
+author: "KNYSZ_WOJCIECH"
+date: "MAJ 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## BIBLIOTEKI
+install.packages("mice")
+
+install.packages("VIM")
+
+install.packages("knitr")
+
+install.packages("rmarkdown")
+
+install.packages("devtools")
+
+library(kableExtra) 
+install.packages("dplyr")
+install.packages("ggplot2")
+
+## DANE
+
+```{r podsumowanie}
+
+data <-"C:/Users/Wojtek/Desktop/Rproject/sledzie.csv"
+
+read_data<-read.csv(data,na.strings = "?", comment.char ="", colClasses = c("integer", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "integer", "numeric"))
+summary(read_data)
+
+```
+
+## Brakujące dane
+
+
+
+```{r aggr,echo = FALSE}
+
+
+my_df<-as.data.frame(read_data)
+library("VIM")
+aggr_plot <- aggr(my_df, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(data), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
+
+"ALGORYTM MICE"
+library("mice")
+my_data_clean<-mice(my_df,m=5,maxit=50,meth='mean',seed=500)
+completed_data<-complete(my_data_clean,1)
+summary(completed_data)
+
+"korelacja Pearsona"
+
+cor(completed_data, use="all.obs", method="pearson")
+
+"Korelacja Pearsona pokazuje, że największy wpływ na rozmiar śledzia ma temperatura przy powierzchni wody,a także oscylacja północnoatlantycka. Obie zmienne posiadają ujemną korelację, zatem można to zinterpretować, że wzrost temperatury i oscylacji powoduje zmniejszenie rozmiaru śledzi."
+
+
+library(corrplot)
+library(ggplot2)
+library(ggcorrplot)
+
+korelacja<-as.matrix(cor(completed_data[,2:16], use = "complete.obs"))
+
+
+
+macierz_korelacji<-cor(completed_data[,2:16], use = "complete.obs")
+
+korelacja_dl<-round(as.data.frame(macierz_korelacji),3)
+library(shiny)
+selectInput("zmiennaX", "korelacji dla:", choices = c(colnames(korelacja_dl)), width= 200)
+
+
+renderTable(rbind(rownames(korelacja_dl),{korelacja_dl[,input$zmiennaX]}),colnames=FALSE,width = 500)
+
+corrplot::corrplot(korelacja, method = 'square' )
+
+```
+
